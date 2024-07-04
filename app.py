@@ -1,111 +1,3 @@
-# from datetime import datetime
-#
-# import uvicorn
-# from pydantic import BaseModel
-# from sqlalchemy import create_engine, Column, Integer, String, DateTime
-# from sqlalchemy.ext.declarative import declarative_base
-# from sqlalchemy.orm import sessionmaker
-# from fastapi import FastAPI, Depends
-# from sqlalchemy.orm import Session as DBSession
-# from typing import List
-# from telethon import TelegramClient, events
-#
-# # Database setup
-# DATABASE_URL = "postgresql://postgres:lyhou123@localhost/user"
-# engine = create_engine(DATABASE_URL, echo=True)
-# Session = sessionmaker(bind=engine)
-# Base = declarative_base()
-#
-#
-# # Message model
-# class Message(Base):
-#     __tablename__ = 'transactions'
-#
-#     id = Column(Integer, primary_key=True)
-#     account_name = Column(String)
-#     amount = Column(String)
-#     transaction_id = Column(String)
-#     approval_code = Column(String)
-#     remark = Column(String)
-#     timestamp = Column(DateTime)
-#
-#
-# # Create tables
-# Base.metadata.create_all(engine)
-#
-# # Telethon setup
-# from config import DESTINATION, API_ID, API_HASH, SESSION, CHATS, KEY_WORDS
-#
-# client = TelegramClient(SESSION, API_ID, API_HASH)
-#
-# app = FastAPI()
-#
-#
-# # Event handler to handle new messages
-# @client.on(events.NewMessage(chats=CHATS))
-# async def new_order(event):
-#     try:
-#         print("Received event message:", event)
-#         message_content = event.message.message
-#         print(f'Received a new message: {message_content} and this is chat id = {event.id}')
-#
-#         # Insert message into database
-#         session = Session()
-#         new_message = Message(chat_id=event.id, content=message_content, timestamp=datetime.now())
-#         session.add(new_message)
-#         session.commit()
-#         session.close()
-#
-#         contain_key_word = any(key_word in message_content for key_word in KEY_WORDS)
-#
-#         if contain_key_word:
-#             print('Message contains a keyword, forwarding...')
-#             await client.forward_messages(DESTINATION, event.message)
-#         else:
-#             print('Message does not contain any of the specified keywords.')
-#
-#     except Exception as ex:
-#         print(f'Exception: {ex}')
-#
-#
-# # Pydantic model for response
-# class MessageResponse(BaseModel):
-#     id: int
-#     chat_id: int
-#     content: str
-#     timestamp: datetime
-#
-#
-# # Dependency to get DB session
-# def get_db():
-#     db = Session()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
-#
-#
-# # Endpoint to fetch messages
-# @app.get('/test', response_model=List[MessageResponse])
-# def get_messages(skip: int = 0, limit: int = 10, db: DBSession = Depends(get_db)):
-#     messages = db.query(Message).offset(skip).limit(limit).all()
-#     return [
-#         MessageResponse(id=message.id, chat_id=message.chat_id, content=message.content, timestamp=message.timestamp)
-#         for message in messages
-#     ]
-#
-#
-# if __name__ == '__main__':
-#     print("Program is running...")
-#
-#     # Start Telethon client
-#     client.start()
-#
-#     # Run FastAPI with uvicorn server
-#     # uvicorn.run(app, host='0.0.0.0', port=8000)
-#     client.run_until_disconnected()
-
-
 from datetime import datetime
 import re
 import uvicorn
@@ -114,7 +6,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session as DBSession
 from fastapi import FastAPI, Depends
-from typing import List
+from typing import List, Optional
 from telethon import TelegramClient, events
 
 # Database setup
@@ -205,13 +97,17 @@ async def new_order(event):
 
 
 # Pydantic model for response
+
+# Pydantic model for response
 class TransactionResponse(BaseModel):
     id: int
-    account_name: str
-    amount: str
-    transaction_id: str
-    approval_code: str
-    remark: str
+    account_name: Optional[str] = None
+    amount: Optional[str] = None
+    transaction_id: Optional[str] = None
+    approval_code: Optional[str] = None
+    remark: Optional[str] = None
+    hour: Optional[str] = None
+    bank_name: Optional[str] = None
     timestamp: datetime
 
 
@@ -236,6 +132,8 @@ def get_transactions(skip: int = 0, limit: int = 10, db: DBSession = Depends(get
             transaction_id=transaction.transaction_id,
             approval_code=transaction.approval_code,
             remark=transaction.remark,
+            hour=transaction.hour,
+            bank_name=transaction.bank_name,  # Placeholder
             timestamp=transaction.timestamp
         ) for transaction in transactions
     ]
