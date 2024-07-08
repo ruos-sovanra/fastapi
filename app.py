@@ -10,7 +10,7 @@ from typing import List, Optional
 from telethon import TelegramClient, events
 
 # Database setup
-DATABASE_URL = "postgresql://postgres:lyhou123@localhost/user"
+DATABASE_URL = "postgresql://alumni:alumni@136.228.158.126:3108/alumnni_prod"
 engine = create_engine(DATABASE_URL, echo=True)
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
@@ -142,7 +142,7 @@ def get_transactions(skip: int = 0, limit: int = 10, db: DBSession = Depends(get
 if __name__ == '__main__':
     print("Program is running...")
 
-    # Start Telethon client
+    # Start Telethon client with session file
     client.start()
 
     # Run FastAPI with uvicorn server
