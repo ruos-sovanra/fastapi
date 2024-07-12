@@ -1,5 +1,6 @@
 from datetime import datetime
 import re
+from sqlalchemy import Boolean
 import uvicorn
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
@@ -29,6 +30,7 @@ class Transaction(Base):
     hour = Column(String)  # New column for hour
     bank_name = Column(String)  # New column for bank name
     timestamp = Column(DateTime)
+    isPaid = Column(Boolean)  # New column for isPaid
 
 
 # Create tables
@@ -60,7 +62,8 @@ async def new_order(event):
             remark=None,  # Placeholder
             hour=None,  # Placeholder
             bank_name=None,  # Placeholder
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
+            isPaid=False  # Placeholder
         )
 
         # Extract information using regex
@@ -97,8 +100,6 @@ async def new_order(event):
 
 
 # Pydantic model for response
-
-# Pydantic model for response
 class TransactionResponse(BaseModel):
     id: int
     account_name: Optional[str] = None
@@ -109,6 +110,7 @@ class TransactionResponse(BaseModel):
     hour: Optional[str] = None
     bank_name: Optional[str] = None
     timestamp: datetime
+    isPaid: Optional[bool] = None  # New field for isPaid
 
 
 # Dependency to get DB session
@@ -134,7 +136,8 @@ def get_transactions(skip: int = 0, limit: int = 10, db: DBSession = Depends(get
             remark=transaction.remark,
             hour=transaction.hour,
             bank_name=transaction.bank_name,  # Placeholder
-            timestamp=transaction.timestamp
+            timestamp=transaction.timestamp,
+            isPaid=transaction.isPaid  # New field for isPaid
         ) for transaction in transactions
     ]
 
