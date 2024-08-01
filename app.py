@@ -24,13 +24,14 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True)
     account_name = Column(String)
     amount = Column(String)
+    currency = Column(String)  # New column for currency
     transaction_id = Column(String)
     approval_code = Column(String)
     remark = Column(String)
     hour = Column(String)  # New column for hour
     bank_name = Column(String)  # New column for bank name
     timestamp = Column(DateTime)
-    isPaid = Column(Boolean)  # New column for isPaid
+    is_paid = Column(Boolean)  # New column for isPaid
 
 
 # Create tables
@@ -63,17 +64,20 @@ async def new_order(event):
             hour=None,  # Placeholder
             bank_name=None,  # Placeholder
             timestamp=datetime.now(),
-            isPaid=False  # Placeholder
+            is_paid=False  # Placeholder
         )
 
         # Extract information using regex
-        amount_match = re.search(r'[៛\$]\d+', message_content)
-        account_name_match = re.search(r'(?<=paid by )[\w\s]+(?= \(\*\d{3}\))', message_content)
+        amount_match = re.search(r'(\d+(?= KHR)|(?<=[៛$])\d+|(?<=USD )\d+)', message_content)
+        account_name_match = re.search(r'(?<=paid by ).*?(?=\(\*\d{3}\))', message_content)
         transaction_id_match = re.search(r'(?<=Trx. ID: )\d+', message_content)
         approval_code_match = re.search(r'(?<=APV: )\d+', message_content)
         remark_match = re.search(r'(?<=Remark: ).*?(?=\.)', message_content)
-        hour_match = re.search(r'\d{1,2}:\d{2} [AP]M', message_content)
-        bank_name_match = re.search(r'via \w+ \w+', message_content)
+        hour_match = re.search(r'\d{1,2}:\d{2} (AM|PM|\d{2}:\d{2})', message_content)
+        bank_name_match = re.search(r'(?<=via ).*?(?= at)', message_content)
+        currency_match = re.search(r'(USD|KHR|\$|៛)', message_content)
+
+
 
         new_message.amount = amount_match.group(0) if amount_match else None
         new_message.account_name = account_name_match.group(0) if account_name_match else None
@@ -82,6 +86,7 @@ async def new_order(event):
         new_message.remark = remark_match.group(0) if remark_match else None
         new_message.hour = hour_match.group(0) if hour_match else None
         new_message.bank_name = bank_name_match.group(0) if bank_name_match else None
+        new_message.currency = currency_match.group(0) if currency_match else None
 
         session.add(new_message)
         session.commit()
@@ -104,13 +109,14 @@ class TransactionResponse(BaseModel):
     id: int
     account_name: Optional[str] = None
     amount: Optional[str] = None
+    currency: Optional[str] = None  # New field for currency
     transaction_id: Optional[str] = None
     approval_code: Optional[str] = None
     remark: Optional[str] = None
     hour: Optional[str] = None
     bank_name: Optional[str] = None
     timestamp: datetime
-    isPaid: Optional[bool] = None  # New field for isPaid
+    is_paid: Optional[bool] = None  # New field for isPaid
 
 
 # Dependency to get DB session
@@ -131,13 +137,14 @@ def get_transactions(skip: int = 0, limit: int = 10, db: DBSession = Depends(get
             id=transaction.id,
             account_name=transaction.account_name,
             amount=transaction.amount,
+            currency=transaction.currency,  # Include currency in response
             transaction_id=transaction.transaction_id,
             approval_code=transaction.approval_code,
             remark=transaction.remark,
             hour=transaction.hour,
             bank_name=transaction.bank_name,  # Placeholder
             timestamp=transaction.timestamp,
-            isPaid=transaction.isPaid  # New field for isPaid
+            is_paid=transaction.is_paid  # New field for isPaid
         ) for transaction in transactions
     ]
 
